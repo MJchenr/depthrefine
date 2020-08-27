@@ -36,6 +36,6 @@ def writePly(colorfile, depthfile, outputfile):
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
     
-    output = os.path.join(outputfile,'mesh.ply')
+    output = os.path.join(outputfile,'fragment_000.ply')
     
     o3d.io.write_triangle_mesh(output, mesh)
