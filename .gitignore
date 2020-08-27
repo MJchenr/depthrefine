@@ -1,0 +1,5 @@
+*.ply
+data/
+__pycache__
+*.png
+*.jpg
