@@ -11,7 +11,7 @@ import numpy as np
 
 
 class ShadingLoss(nn.Module):
-    def __init__(self, rgb, mask, l, albedo, CameraParam):
+    def __init__(self, rgb, mask, l, CameraParam):
         super(ShadingLoss, self).__init__()
         # self.depth = depth
         self.rgb = rgb
@@ -33,7 +33,6 @@ class ShadingLoss(nn.Module):
         self.p2d_homo = p2d_homo.to(self.device)
         self.p3d_homo = torch.matmul(self.CameraParam.inverse().reshape(1, 1, 3, 3), self.p2d_homo).squeeze()
         self.l = l
-        self.albedo = albedo
         # render_img = torch.zeros(self.rgb.shape).to(self.device)
         # render_img[self.imask] = B
         # render_mean = self.avg_pooling(
@@ -64,7 +63,7 @@ class ShadingLoss(nn.Module):
         H[:, 7] = Nmask[:, 2]*Nmask[:, 0]
         H[:, 8] = Nmask[:, 0]*Nmask[:, 0]-Nmask[:, 1]*Nmask[:, 1]
 
-        B = torch.matmul(H, self.l) * self.albedo
+        B = torch.matmul(H, self.l)
         return B
 
     def forward(self, depth):
@@ -135,10 +134,10 @@ class DepthLoss(nn.Module):
 
 
 class LossAll(nn.Module):
-    def __init__(self, mask, CameraParam, rgb, depth, l, albedo):
+    def __init__(self, mask, CameraParam, rgb, depth, l):
         super(LossAll, self).__init__()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.loss_shading = ShadingLoss(rgb, mask, l, albedo, CameraParam)
+        self.loss_shading = ShadingLoss(rgb, mask, l, CameraParam)
         self.loss_smooth = SmoothLoss(mask, CameraParam)
         self.loss_depth = DepthLoss(mask)
         weights = torch.Tensor([1, 20, 4])

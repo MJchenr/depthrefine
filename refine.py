@@ -105,22 +105,22 @@ class DepthRefine():
 
         # albedo = np.zeros(self.rgb.shape)
         # maskX, maskY = np.where(self.mask_z0>0)
-        albedo = self.rgb[self.imask] / torch.matmul(H, l)
-        return l, H, albedo
+        # albedo = self.rgb[self.imask] / torch.matmul(H, l)
+        return l, H
 
     def render_img(self):
-        l, H, albedo = self.estimate_lighting()
-        B = torch.matmul(H, l)*albedo
+        l, H = self.estimate_lighting()
+        B = torch.matmul(H, l)
         img = torch.zeros(self.rgb.shape).to(self.device)
         img[self.imask] = B
         return img
 
     def refine(self):
-        l, H, albedo = self.estimate_lighting()
-        loss_f = LossAll(self.mask, self.CameraParam, self.rgb, self.depth, l, albedo).to(self.device)
+        l, H = self.estimate_lighting()
+        loss_f = LossAll(self.mask, self.CameraParam, self.rgb, self.depth, l).to(self.device)
         optimizer = optim.Adam([self.depth], lr=0.333)
         t1 = time.time()
-        for i in range(1500):
+        for i in range(800):
             optimizer.zero_grad()
             # loss = loss_f(v,rgb)
             loss, loss_dict = loss_f(self.depth, self.depth_init, ret_loss_dict=True)
@@ -136,3 +136,29 @@ class DepthRefine():
         refined[mask == 0] = 20000
 
         return refined
+
+if __name__ == "__main__":
+    from PIL import Image
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    cameraparam = torch.tensor([[359, 0, 258], [0, 360, 209], [0, 0, 1]], dtype=torch.float32, device=device)
+    rgb1 = Image.open('./data/rgb_21.jpg')
+    depth = Image.open('./data/depth_21.png')
+    mask = Image.open('./data/mask_21.png')    
+    rgb = torch.tensor(np.array(rgb1, dtype='float32'), device=device)
+    depth = torch.tensor(np.array(depth, dtype='float32'), device=device)
+    mask = torch.tensor(np.array(mask, dtype='float32'), device=device)
+    demo = DepthRefine(rgb,depth,mask,cameraparam)
+    demo.refine()
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
